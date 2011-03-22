@@ -2533,6 +2533,13 @@
 			var oCol = oSettings.aoColumns[ iCol ];
 			
 			/* User specified column options */
+			/* Grab configuration from metadata if available  - this takes precedence over options from constructor */
+            if ($.metadata && $(oCol.nTh).metadata() !== null) {
+                if (typeof oOptions == 'undefined' || oOptions === null) {
+                    oOptions = {};
+                }
+                oOptions = $.extend({}, oOptions, $(oCol.nTh).metadata()); 
+            }
 			if ( typeof oOptions != 'undefined' && oOptions !== null )
 			{
 				if ( typeof oOptions.sType != 'undefined' )
@@ -6470,6 +6477,14 @@
 			oSettings.sDestroyWidth = $(this).width();
 			
 			/* Store the features that we have available */
+			/* Grab configuration from metadata if available  - this takes precedence over options from constructor */
+            if ($.metadata && $(this).metadata() !== null) {
+                if (typeof oInit == 'undefined' || oInit === null) {
+                    oInit = {};
+                }
+                oInit = $.extend({}, oInit, $(this).metadata()); 
+            }
+			
 			if ( typeof oInit != 'undefined' && oInit !== null )
 			{
 				oSettings.oInit = oInit;
