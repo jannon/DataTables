@@ -52,33 +52,6 @@ $(document).ready( function () {
 	);
 	
 	oTest.fnTest( 
-		"fnRender iDataColumn is row number",
-		function () {
-			var iCount = 0;
-			mTmp = true;
-			oSession.fnRestore();
-			oTable = $('#example').dataTable( {
-				"aaData": gaaData,
-				"aoColumns": [
-					null,
-					{ "fnRender": function (a) {
-						if ( iCount != a.iDataRow )
-						{
-							mTmp = false;
-						}
-						iCount++;
-						return a.aData[a.iDataColumn];
-					} },
-					null,
-					null,
-					null
-				]
-			} );
-		},
-		function () { return mTmp; }
-	);
-	
-	oTest.fnTest( 
 		"fnRender iDataColumn is the column",
 		function () {
 			mTmp = true;
