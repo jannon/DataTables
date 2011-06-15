@@ -1018,7 +1018,14 @@
 			 * Scope:    jQuery.dataTable.classSettings 
 			 */
 			this.aoColumns = [];
-							
+
+            /*
+             * Variable: oColumnNames
+             * Purpose:  Container for mapping column name to indices
+             * Scope:    jQuery.dataTable.classSettings
+             */
+            this.oColumnNames = [];
+            
 			/*
 			 * Variable: aoHeader
 			 * Purpose:  Store information about the table's header
@@ -1507,13 +1514,13 @@
 		 * Purpose:  Filter the input based on data
 		 * Returns:  -
 		 * Inputs:   string:sInput - string to filter the table on
-		 *           int:iColumn - optional - column to limit filtering to
+		 *           mixed:mColumn - optional - column to limit filtering to (index or name)
 		 *           bool:bRegex - optional - treat as regular expression or not - default false
 		 *           bool:bSmart - optional - perform smart filtering or not - default true
 		 *           bool:bShowGlobal - optional - show the input global filter in it's input box(es)
 		 *              - default true
 		 */
-		this.fnFilter = function( sInput, iColumn, bRegex, bSmart, bShowGlobal )
+		this.fnFilter = function( sInput, mColumn, bRegex, bSmart, bShowGlobal )
 		{
 			var oSettings = _fnSettingsFromNode( this[_oExt.iApiIndex] );
 			
@@ -1537,7 +1544,7 @@
 				bShowGlobal = true;
 			}
 			
-			if ( typeof iColumn == "undefined" || iColumn === null )
+			if ( typeof mColumn == "undefined" || mColumn === null )
 			{
 				/* Global filter */
 				_fnFilterComplete( oSettings, {
@@ -1558,6 +1565,9 @@
 			else
 			{
 				/* Single column filter */
+				// if column is a column name, use index if available
+                if (typeof mColumn == 'string') { mColumn = oSettings.oColumnNames[mColumn] || mColumn; }
+				
 				oSettings.aoPreSearchCols[ iColumn ].sSearch = sInput;
 				oSettings.aoPreSearchCols[ iColumn ].bRegex = bRegex;
 				oSettings.aoPreSearchCols[ iColumn ].bSmart = bSmart;
@@ -1911,12 +1921,14 @@
 		 *           mixed:mRow - 
 		 *             int: - index of aoData to be updated, or
 		 *             node(TR): - TR element you want to update
-		 *           int:iColumn - the column to update - optional (not used of mData is an array or object)
+		 *           mixed:mColumn - the column to update - optional (not used if mData is an array or object)
+		 *              int - index of Column
+		 *              string: - column name
 		 *           bool:bRedraw - redraw the table or not - default true
 		 *           bool:bAction - perform predraw actions or not (you will want this as 'true' if
 		 *             you have bRedraw as true) - default true
 		 */
-		this.fnUpdate = function( mData, mRow, iColumn, bRedraw, bAction )
+		this.fnUpdate = function( mData, mRow, mColumn, bRedraw, bAction )
 		{
 			var oSettings = _fnSettingsFromNode( this[_oExt.iApiIndex] );
 			var iVisibleColumn, i, iLen, sDisplay;
@@ -1954,27 +1966,31 @@
 			{
 				/* Individual cell update */
 				sDisplay = mData;
-				_fnSetCellData( oSettings, iRow, iColumn, sDisplay );
+				
+				// if column is a column name, use index if available
+                if (typeof mColumn == 'string') { mColumn = oSettings.oColumnNames[mColumn] || mColumn; }
+                
+				_fnSetCellData( oSettings, iRow, mColumn, sDisplay );
 				
 				if ( oSettings.aoColumns[iColumn].fnRender !== null )
 				{
-					sDisplay = oSettings.aoColumns[iColumn].fnRender( {
+					sDisplay = oSettings.aoColumns[mColumn].fnRender( {
 						"iDataRow": iRow,
-						"iDataColumn": iColumn,
+						"iDataColumn": mColumn,
 						"aData": oSettings.aoData[iRow]._aData,
 						"oSettings": oSettings
 					} );
 					
-					if ( oSettings.aoColumns[iColumn].bUseRendered )
+					if ( oSettings.aoColumns[mColumn].bUseRendered )
 					{
-						_fnSetCellData( oSettings, iRow, iColumn, sDisplay );
+						_fnSetCellData( oSettings, iRow, mColumn, sDisplay );
 					}
 				}
 				
 				if ( oSettings.aoData[iRow].nTr !== null )
 				{
 					/* Do the actual HTML update */
-					_fnGetTdNodes( oSettings, iRow )[iColumn].innerHTML = sDisplay;
+					_fnGetTdNodes( oSettings, iRow )[mColumn].innerHTML = sDisplay;
 				}
 			}
 			
@@ -2004,19 +2020,24 @@
 		 * Function: fnShowColoumn
 		 * Purpose:  Show a particular column
 		 * Returns:  -
-		 * Inputs:   int:iCol - the column whose display should be changed
+		 * Inputs:   mixed:mCol - the column whose display should be changed
+		 *             int: - column index
+		 *             string: - column name
 		 *           bool:bShow - show (true) or hide (false) the column
 		 *           bool:bRedraw - redraw the table or not - default true
 		 */
-		this.fnSetColumnVis = function ( iCol, bShow, bRedraw )
+		this.fnSetColumnVis = function ( mCol, bShow, bRedraw )
 		{
 			var oSettings = _fnSettingsFromNode( this[_oExt.iApiIndex] );
 			var i, iLen;
 			var iColumns = oSettings.aoColumns.length;
 			var nTd, nCell, anTrs, jqChildren, bAppend, iBefore;
 			
+			// if column is a column name, use index if available
+            if (typeof mCol == 'string') { mCol = oSettings.oColumnNames[mCol] || mCol; }
+                
 			/* No point in doing anything if we are requesting what is already true */
-			if ( oSettings.aoColumns[iCol].bVisible == bShow )
+			if ( oSettings.aoColumns[mCol].bVisible == bShow )
 			{
 				return;
 			}
@@ -2025,7 +2046,7 @@
 			if ( bShow )
 			{
 				var iInsert = 0;
-				for ( i=0 ; i<iCol ; i++ )
+				for ( i=0 ; i<mCol ; i++ )
 				{
 					if ( oSettings.aoColumns[i].bVisible )
 					{
@@ -2039,7 +2060,7 @@
 				/* Which coloumn should we be inserting before? */
 				if ( !bAppend )
 				{
-					for ( i=iCol ; i<iColumns ; i++ )
+					for ( i=mCol ; i<iColumns ; i++ )
 					{
 						if ( oSettings.aoColumns[i].bVisible )
 						{
@@ -2056,13 +2077,13 @@
 						if ( bAppend )
 						{
 							oSettings.aoData[i].nTr.appendChild( 
-								oSettings.aoData[i]._anHidden[iCol]
+								oSettings.aoData[i]._anHidden[mCol]
 							);
 						}
 						else
 						{
 							oSettings.aoData[i].nTr.insertBefore(
-								oSettings.aoData[i]._anHidden[iCol], 
+								oSettings.aoData[i]._anHidden[mCol], 
 								_fnGetTdNodes( oSettings, i )[iBefore] );
 						}
 					}
@@ -2075,15 +2096,15 @@
 				{
 					if ( oSettings.aoData[i].nTr !== null )
 					{
-						nTd = _fnGetTdNodes( oSettings, i )[iCol];
-						oSettings.aoData[i]._anHidden[iCol] = nTd;
+						nTd = _fnGetTdNodes( oSettings, i )[mCol];
+						oSettings.aoData[i]._anHidden[mCol] = nTd;
 						nTd.parentNode.removeChild( nTd );
 					}
 				}
 			}
 
 			/* Clear to set the visible flag */
-			oSettings.aoColumns[iCol].bVisible = bShow;
+			oSettings.aoColumns[mCol].bVisible = bShow;
 
 			/* Redraw the header and footer based on the new column visibility */
 			_fnDrawHead( oSettings, oSettings.aoHeader );
@@ -2621,6 +2642,11 @@
 			oCol.fnGetData = _fnGetObjectDataFn( oCol.mDataProp );
 			oCol.fnSetData = _fnSetObjectDataFn( oCol.mDataProp );
 			
+			/* Map the name to column index if present */
+			if (oCol.sName && oCol.sName !== "") {
+                oSettings.oColumnNames[oCol.sName] = iCol;
+            }
+                
 			/* Feature sorting overrides column specific when off */
 			if ( !oSettings.oFeatures.bSort )
 			{
