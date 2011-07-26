@@ -1568,9 +1568,9 @@
 				// if column is a column name, use index if available
                 if (typeof mColumn == 'string') { mColumn = oSettings.oColumnNames[mColumn] || mColumn; }
 				
-				oSettings.aoPreSearchCols[ iColumn ].sSearch = sInput;
-				oSettings.aoPreSearchCols[ iColumn ].bRegex = bRegex;
-				oSettings.aoPreSearchCols[ iColumn ].bSmart = bSmart;
+				oSettings.aoPreSearchCols[ mColumn ].sSearch = sInput;
+				oSettings.aoPreSearchCols[ mColumn ].bRegex = bRegex;
+				oSettings.aoPreSearchCols[ mColumn ].bSmart = bSmart;
 				_fnFilterComplete( oSettings, oSettings.oPreviousSearch, 1 );
 			}
 		};
