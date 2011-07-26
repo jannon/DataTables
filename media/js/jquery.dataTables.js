@@ -1972,7 +1972,7 @@
                 
 				_fnSetCellData( oSettings, iRow, mColumn, sDisplay );
 				
-				if ( oSettings.aoColumns[iColumn].fnRender !== null )
+				if ( oSettings.aoColumns[mColumn].fnRender !== null )
 				{
 					sDisplay = oSettings.aoColumns[mColumn].fnRender( {
 						"iDataRow": iRow,
